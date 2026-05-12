@@ -37,6 +37,7 @@ import {
   Globe,
   MoveRight,
   ShieldCheck,
+  BookOpen,
   AlertTriangle,
   Car,
   Bot
@@ -48,13 +49,23 @@ interface NodeCardProps {
   title: string;
   icon: React.ReactNode;
   colorClass: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   delay?: number;
   isDark?: boolean;
+  onClick?: () => void;
 }
 
-const NodeCard = ({ id, index, title, icon, colorClass, children, delay = 0, isDark = false }: NodeCardProps) => {
+const NodeCard = ({ id, index, title, icon, colorClass, children, delay = 0, isDark = false, onClick }: NodeCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const hasChildren = !!children;
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (hasChildren) {
+      setIsOpen(!isOpen);
+    }
+  };
 
   return (
     <motion.div 
@@ -71,8 +82,8 @@ const NodeCard = ({ id, index, title, icon, colorClass, children, delay = 0, isD
       
       <div 
         id={id}
-        onClick={() => setIsOpen(!isOpen)}
-        className={`p-6 rounded-2xl border cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
+        onClick={handleClick}
+        className={`p-6 rounded-2xl border ${hasChildren || onClick ? 'cursor-pointer' : 'cursor-default'} transition-all duration-300 ${hasChildren || onClick ? 'hover:shadow-xl hover:-translate-y-1' : ''} ${
           isDark 
             ? `bg-slate-900 border-slate-800 ${isOpen ? 'shadow-2xl shadow-blue-900/20' : 'shadow-lg'}` 
             : `bg-white border-slate-200 ${isOpen ? 'shadow-lg border-slate-300' : 'shadow-sm'}`
@@ -83,16 +94,22 @@ const NodeCard = ({ id, index, title, icon, colorClass, children, delay = 0, isD
             <span className={`${isDark ? 'text-slate-500' : 'text-slate-400'} font-mono text-sm uppercase`}>{index}.</span>
             {title}
           </h3>
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-          </motion.div>
+          {(hasChildren || onClick) && (
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {onClick ? (
+                <ArrowUpRight className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              ) : (
+                <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              )}
+            </motion.div>
+          )}
         </div>
 
         <AnimatePresence>
-          {isOpen && (
+          {isOpen && hasChildren && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
@@ -1124,6 +1141,242 @@ const PyramidArchitecture = ({ onLevel2Click, onLevel3Click }: { onLevel2Click: 
 };
 
 
+const LlmVsWorldModelModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={onClose} className="absolute inset-0 bg-slate-900/80 backdrop-blur-xl" />
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
+        className="relative bg-white rounded-[3rem] w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 scrollbar-hide"
+      >
+        <div className="p-8 md:p-16">
+          <div className="flex justify-between items-start mb-12">
+            <div>
+              <div className="inline-block px-4 py-1 bg-pink-100 text-pink-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">认知机制深度对比</div>
+              <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-2">语言智能 vs 世界智能</h2>
+              <p className="text-slate-500 font-medium">LLM 与世界模型在“物理常识”层面的本质差异</p>
+            </div>
+            <button onClick={onClose} className="p-3 hover:bg-slate-100 rounded-full transition-colors"><X className="w-8 h-8 text-slate-400" /></button>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-12 mb-16">
+            <div className="space-y-6">
+              <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-2 h-full bg-slate-900" />
+                <h3 className="text-2xl font-black text-slate-900 mb-4 flex items-center gap-3">
+                  <BookOpen className="w-6 h-6" /> LLM 的逻辑
+                </h3>
+                <p className="text-lg font-black text-slate-400 mb-6 italic">“根据语言经验生成答案”</p>
+                <div className="space-y-4">
+                  {/* Token Correlation Animation */}
+                  <div className="h-24 bg-white rounded-2xl flex items-center justify-center relative overflow-hidden border border-slate-200 mb-4 shadow-inner">
+                    <div className="flex gap-2 relative z-10">
+                      {["宜","家","椅","子"].map((token, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.2 }}
+                          className="w-10 h-10 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center text-[10px] font-black shadow-sm"
+                        >
+                          {token}
+                        </motion.div>
+                      ))}
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: [0, 1, 0], x: [0, 20] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                        className="px-3 py-1 bg-blue-500 text-white rounded-lg text-[10px] font-black absolute -right-16 top-2"
+                      >
+                        预测 Next Token
+                      </motion.div>
+                    </div>
+                    {/* Statistical waves */}
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 flex items-end justify-center gap-1 px-4 opacity-10">
+                       {[0.2, 0.5, 0.8, 0.4, 0.6, 0.3, 0.9, 0.5].map((h, i) => (
+                         <motion.div 
+                           key={i}
+                           animate={{ height: [`${h*100}%`, `${(1-h)*100}%`, `${h*100}%`] }}
+                           transition={{ duration: 2, repeat: Infinity, delay: i * 0.1 }}
+                           className="w-full bg-slate-900 rounded-t-sm"
+                         />
+                       ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-white rounded-2xl shadow-sm">
+                    <p className="text-xs font-black text-slate-900 mb-1">执行特征</p>
+                    <p className="text-[11px] text-slate-500 font-medium">基于“下一个 Token”的统计预测，预测的是语言共现关系。</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-red-50">
+                    <p className="text-xs font-black text-red-600 mb-1">核心软肋</p>
+                    <p className="text-[11px] text-slate-500 font-medium">缺乏真实空间理解，没有物理约束，无法在脑中进行物理试错。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="p-8 bg-pink-50 rounded-[2.5rem] border border-pink-100 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-2 h-full bg-pink-500" />
+                <h3 className="text-2xl font-black text-pink-900 mb-4 flex items-center gap-3">
+                  <Brain className="w-6 h-6" /> 世界模型的逻辑
+                </h3>
+                <p className="text-lg font-black text-pink-400 mb-6 italic">“在脑中模拟物理世界后再行动”</p>
+                <div className="space-y-4">
+                  {/* World Model Simulation Animation */}
+                  <div className="h-24 bg-white rounded-2xl flex items-center justify-center relative overflow-hidden border border-pink-200 mb-4 shadow-inner">
+                    <div className="relative z-10 w-full px-12 flex justify-between items-center">
+                       <div className="w-10 h-10 bg-pink-100 border border-pink-200 rounded-xl flex items-center justify-center">
+                          <motion.div 
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                          >
+                            <Target className="w-6 h-6 text-pink-500" />
+                          </motion.div>
+                       </div>
+                       <div className="flex-1 flex justify-center">
+                          <svg className="w-full h-8 px-4" viewBox="0 0 100 20">
+                             <motion.path 
+                               d="M 0 10 Q 25 20 50 10 T 100 10" 
+                               fill="none" 
+                               stroke="#ec4899" 
+                               strokeWidth="2"
+                               strokeDasharray="4 2"
+                               animate={{ strokeDashoffset: [0, -6] }}
+                               transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                             />
+                          </svg>
+                       </div>
+                       <motion.div 
+                         animate={{ y: [0, -10, 0] }}
+                         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                         className="w-10 h-10 bg-pink-500 rounded-full flex items-center justify-center shadow-lg"
+                       >
+                         <div className="w-4 h-4 bg-white rounded-full opacity-40 blur-[2px] -mt-2 -ml-2" />
+                       </motion.div>
+                    </div>
+                    <div className="absolute inset-x-0 bottom-2 text-center">
+                       <span className="text-[8px] font-black text-pink-300 uppercase tracking-widest">Internal Simulation (Physics)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-white rounded-2xl shadow-sm">
+                    <p className="text-xs font-black text-pink-600 mb-1">执行特征</p>
+                    <p className="text-[11px] text-slate-500 font-medium">基于“环境状态”的动力学模拟，预测的是动作导致的因果后果。</p>
+                  </div>
+                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-emerald-50">
+                    <p className="text-xs font-black text-emerald-600 mb-1">核心优势</p>
+                    <p className="text-[11px] text-slate-500 font-medium">具备物理锚点、空间感知及重心稳定逻辑，支持内部物理推演。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 rounded-[3rem] p-10 md:p-16 text-white mb-16 relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-96 h-96 bg-pink-500/10 blur-[100px] -mr-48 -mt-48" />
+             <h3 className="text-3xl font-black mb-12 text-center">综合案例：组装一把宜家椅子</h3>
+             
+             <div className="grid md:grid-cols-2 gap-12 relative z-10">
+                <div className="space-y-8">
+                   <div className="flex items-center gap-4 border-b border-white/10 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-black">AI</div>
+                      <h4 className="text-xl font-bold">传统 LLM 方案</h4>
+                   </div>
+                   <ul className="space-y-6">
+                      <li className="flex gap-4">
+                         <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+                         <p className="text-sm text-slate-300 font-medium"><b>语言搜索</b>：在语料库中检索“椅子组装”的相关文本描述。</p>
+                      </li>
+                      <li className="flex gap-4">
+                         <div className="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                         <p className="text-sm text-slate-300 font-medium"><b>步骤生成</b>：输出文字指令（1.连接A, 2.旋螺丝...）。</p>
+                      </li>
+                      <li className="flex gap-4 text-red-300/80">
+                         <div className="w-6 h-6 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">!</div>
+                         <p className="text-sm font-medium"><b>失败点</b>：并不理解螺丝受力平衡或零件空间冲突，可能出现“理论可行但实际塌陷”。</p>
+                      </li>
+                   </ul>
+                </div>
+
+                <div className="space-y-8">
+                   <div className="flex items-center gap-4 border-b border-pink-500/30 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-pink-500 flex items-center justify-center font-black">WM</div>
+                      <h4 className="text-xl font-bold">世界模型方案</h4>
+                   </div>
+                   <ul className="space-y-6">
+                      <li className="flex gap-4">
+                         <div className="w-6 h-6 rounded-full bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">1</div>
+                         <p className="text-sm text-slate-300 font-medium"><b>环境感知</b>：获取零件 3D 几何、重心及接口的物理参数。</p>
+                      </li>
+                      <li className="flex gap-4 text-pink-300">
+                         <div className="w-6 h-6 rounded-full bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">2</div>
+                         <p className="text-sm font-black"><b>潜空间模拟</b>：在脑中“先装一遍”，模拟不同顺序下的结构稳定性。</p>
+                      </li>
+                      <li className="flex gap-4">
+                         <div className="w-6 h-6 rounded-full bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">3</div>
+                         <p className="text-sm text-slate-300 font-medium"><b>物理闭环</b>：预测装完后是否会倒，选择力学性能最优的物理路径。</p>
+                      </li>
+                   </ul>
+                </div>
+             </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-[2rem] border border-slate-200">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">关键维度</th>
+                  <th className="p-6 text-[10px] font-black text-slate-900 uppercase tracking-widest">LLM (符号智能)</th>
+                  <th className="p-6 text-[10px] font-black text-pink-600 uppercase tracking-widest">世界模型 (世界智能)</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm font-medium">
+                {[
+                  { dim: "学习对象", llm: "语言 Token", wm: "世界物理状态" },
+                  { dim: "推理方式", llm: "文本关联与推导", wm: "潜空间物理模拟" },
+                  { dim: "空间理解", llm: "极弱 (基于描述)", wm: "极强 (具备 3D 常识)" },
+                  { dim: "动作后果", llm: "文本层面的后续内容", wm: "环境层面的因果改变" },
+                  { dim: "内部推演", llm: "无 (直接生成结果)", wm: "有 (预测不同行动的未来)" }
+                ].map((row, i) => (
+                  <tr key={i} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50 transition-colors">
+                    <td className="p-6 font-black text-slate-900">{row.dim}</td>
+                    <td className="p-6 text-slate-500">{row.llm}</td>
+                    <td className="p-6 text-pink-600 font-bold">{row.wm}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-16 p-10 bg-gradient-to-br from-pink-500 to-rose-600 rounded-[3rem] text-white flex flex-col md:flex-row items-center gap-10">
+             <div className="w-24 h-24 bg-white/20 rounded-[2rem] flex items-center justify-center shrink-0">
+                <Target className="w-12 h-12" />
+             </div>
+             <div>
+                <h4 className="text-2xl font-black mb-2">深度洞察：为什么世界模型是 AGI 的必经之路？</h4>
+                <p className="text-white/80 font-medium leading-relaxed">
+                   真实世界的问题并非语言问题，而是物理、空间、因果与行动的综合博弈。LLM 让 AI 学会了“如何描述世界”，而世界模型让 AI 学会了“如何理解并改变世界”。两者结合（语言大脑 + 世界大脑）构建了通向通用人工智能的完整路径。
+                </p>
+             </div>
+          </div>
+          
+          <button 
+            onClick={onClose}
+            className="w-full mt-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest text-sm hover:bg-pink-600 transition-all shadow-xl hover:scale-[1.01] active:scale-95"
+          >
+            深刻理解，继续探索
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 const DrivingScenarioModal = ({ activeIndex, onClose }: { activeIndex: number | null; onClose: () => void }) => {
   if (activeIndex === null) return null;
 
@@ -1572,6 +1825,7 @@ export default function App() {
   const [activeRoboticTech, setActiveRoboticTech] = useState<number | null>(null);
   const [activeDrivingTech, setActiveDrivingTech] = useState<number | null>(null);
   const [activeDrivingScenario, setActiveDrivingScenario] = useState<number | null>(null);
+  const [isLlmVsWorldModalOpen, setIsLlmVsWorldModalOpen] = useState(false);
 
   const modules = [
     { title: "什么是世界模型", subtitle: "Definition & Logic" },
@@ -1698,34 +1952,17 @@ export default function App() {
                 <NodeCard 
                   id="node-3"
                   index="03" 
-                  title="核心路径：JEPA 架构 (LeCun 方案)" 
+                  title="世界模型与LLM" 
                   icon={<Layers className="w-6 h-6" />} 
                   colorClass="bg-pink-500"
                   delay={0.3}
-                >
-                  <div className="bg-pink-50/50 p-6 rounded-2xl border border-pink-100 mb-8">
-                    <h4 className="text-pink-700 font-bold mb-3 flex items-center gap-2">
-                       <Brain className="w-5 h-5 text-pink-600" />
-                       预测的本质转换：抽象表征预测
-                    </h4>
-                    <p className="text-slate-700 leading-relaxed text-sm">
-                      <b>摒弃像素重构</b>：不追求“画出”细节，而是在潜空间预测语义特征，建立了 AI 的“物理直觉”。
-                    </p>
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {[
-                      { title: "非生成式预测", desc: "比较特征向量而非像素。" },
-                      { title: "信息瓶颈效应", desc: "舍弃噪声，保留物理变量。" },
-                      { title: "因果模拟器", desc: "从观察者升级为规划者。" },
-                      { title: "高维时空对齐", desc: "学习视频序列的时空连续性。" }
-                    ].map((feature, i) => (
-                      <div key={i} className="group/feature border-l-2 border-slate-200 hover:border-pink-400 pl-4 py-2 transition-colors bg-white rounded-r-xl">
-                        <p className="text-sm font-bold text-slate-800 transition-colors uppercase tracking-tight text-[11px]">{feature.title}</p>
-                        <p className="text-xs text-slate-500 mt-1">{feature.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                </NodeCard>
+                  onClick={() => setIsLlmVsWorldModalOpen(true)}
+                />
+
+                <LlmVsWorldModelModal 
+                  isOpen={isLlmVsWorldModalOpen} 
+                  onClose={() => setIsLlmVsWorldModalOpen(false)} 
+                />
 
                 <NodeCard 
                   id="node-4"
